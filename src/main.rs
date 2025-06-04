@@ -4,7 +4,7 @@ use actix_multipart::Multipart;
 use actix_web::{App, HttpResponse, HttpServer, post};
 use futures_util::TryStreamExt as _; // Commonly used alias for stream processing
 use once_cell::sync::Lazy;
-use rand::{seq::IndexedRandom, thread_rng};
+use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::fs;
@@ -43,8 +43,9 @@ static NOUN: Lazy<Vec<&str>> = Lazy::new(move || {
 
 #[post("/deploy")]
 async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
+    println!("Deploy hit!");
     let db = Db {};
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
     let mut fin = vec![];
     let mut project_name = None;
     let mut tld = None;
