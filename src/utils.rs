@@ -11,18 +11,19 @@ impl Db {
         let db = foundationdb::Database::default().map_err(|_e| "Database get error")?;
         match db
             .run(|trx, _maybe_committed| async move {
-                let Ok(tr) = trx.get(v, false).await else {
-                    return Err(foundationdb::FdbBindingError::ReferenceToTransactionKept);
+                let tr = match trx.get(v, false).await {
+                    Ok(tr) => tr,
+                    Err(e) => {
+                        eprintln!("Error commiting transaction: {e}");
+                        return Err(foundationdb::FdbBindingError::ReferenceToTransactionKept);
+                    }
                 };
                 Ok(tr)
             })
             .await
         {
             Ok(slice) => Ok(slice.map(move |e| e.as_ref().to_vec())),
-            Err(e) => {
-                eprintln!("Commit transaction error: {e}");
-                Err("cannot commit transaction")
-            }
+            Err(e) => Err("cannot commit transaction"),
         }
     }
     pub async fn insert(self, k: &str, v: &[u8]) -> Result<(), &'static str> {
