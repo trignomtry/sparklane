@@ -19,7 +19,10 @@ impl Db {
             .await
         {
             Ok(slice) => Ok(slice.map(move |e| e.as_ref().to_vec())),
-            Err(_) => Err("cannot commit transaction"),
+            Err(e) => {
+                eprintln!("Commit transaction error: {e}");
+                Err("cannot commit transaction")
+            }
         }
     }
     pub async fn insert(self, k: &str, v: &[u8]) -> Result<(), &'static str> {
