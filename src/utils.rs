@@ -102,7 +102,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
     let db = Db {};
 
     // Check if instance already exists and insert if not
-    match db.get(&cfg.id).await {
+    match db.get(&format!("vm:{}", &cfg.id)).await {
         Ok(Some(_)) => {
             eprintln!("Instance {} already exists.", cfg.id);
             return Err(std::io::Error::new(
