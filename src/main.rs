@@ -158,7 +158,7 @@ async fn main() -> std::io::Result<()> {
 
     println!("Server starting on http://localhost:8096/");
     HttpServer::new(move || App::new().service(deploy))
-        .bind(("127.0.0.1", 8096))?
+        .bind(("0.0.0.0", 8096))?
         .run()
         .await
 }
