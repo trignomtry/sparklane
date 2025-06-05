@@ -228,7 +228,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
     std::os::unix::fs::symlink("init.sh", &symlink_path)?;
 
     let _ = Command::new("ip")
-        .args(["link", "del", &format!("tap_spark_{}", cfg.id)])
+        .args(["link", "del", &format!("tap{}", &cfg.id[..8])])
         .status();
 
     Command::new("ip")
@@ -237,16 +237,16 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
             "add",
             "mode",
             "tap",
-            &format!("tap_spark_{}", cfg.id),
+            &format!("tap{}", &cfg.id[..8]),
         ])
         .status()?;
 
     Command::new("ip")
-        .args(["link", "set", &format!("tap_spark_{}", cfg.id), "up"])
+        .args(["link", "set", &format!("tap{}", &cfg.id[..8]), "up"])
         .status()?;
 
     let _ = fs::remove_file(format!("/tmp/firecracker-{}.sock", cfg.id)).await;
-
+    println!("Crackin...");
     // Execute the firecracker command and wait for it to finish
     let firecracker_status = Command::new("firecracker")
         .args([
