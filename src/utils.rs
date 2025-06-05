@@ -104,8 +104,22 @@ pub fn extract_zip_to_vec(zip_bytes: &[u8]) -> std::io::Result<Vec<(String, Vec<
 }
 
 pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Result<()> {
+    let base_img_path = "/mnt/sparklane/base.img";
+    let vm_img_path = format!("/mnt/vm-images/{}.img", cfg.id);
     let mount_dir = format!("/mnt/vm-usercode-{}", cfg.id);
-    let ext4_path = "/mnt/sparklane";
+    let app_path = format!("{}/app", &mount_dir);
+
+    // Step 1: Copy base.img to new image
+    std::fs::create_dir_all("/mnt/vm-images")?;
+    std::fs::copy(base_img_path, &vm_img_path)?;
+
+    // Step 2: Mount the image
+    fs::create_dir_all(&mount_dir).await?;
+    Command::new("mount")
+        .args(["-o", "loop", &vm_img_path, &mount_dir])
+        .status()?;
+    fs::create_dir_all(&app_path).await?;
+
     let db = Db {};
 
     // Check if instance already exists and insert if not
@@ -149,11 +163,6 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
             ));
         }
     }
-    let app_path = format!("{}/app", &mount_dir);
-    fs::create_dir_all(&app_path).await?;
-    std::process::Command::new("mount")
-        .args(["-o", "loop", ext4_path, &mount_dir])
-        .status()?;
 
     for (path, js) in user_js {
         fs::write(format!("{}/{}", &app_path, path), js).await?;
@@ -183,7 +192,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
   "network-interfaces": [
     {{
       "iface_id": "eth0",
-      "host_dev_name": "tap_spark_{}",
+      "host_dev_name": "tap{}",
       "guest_mac": "{}"
     }}
   ]
@@ -194,8 +203,8 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
 }}
 
     "#,
-        mount_dir,
-        cfg.id,
+        &vm_img_path,
+        &cfg.id[..8],
         generate_mac(&cfg.id),
         cfg.id
     );
@@ -218,6 +227,10 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
 
     std::os::unix::fs::symlink("init.sh", &symlink_path)?;
 
+    let _ = Command::new("ip")
+        .args(["link", "del", &format!("tap_spark_{}", cfg.id)])
+        .status();
+
     Command::new("ip")
         .args([
             "tuntap",
@@ -231,6 +244,8 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
     Command::new("ip")
         .args(["link", "set", &format!("tap_spark_{}", cfg.id), "up"])
         .status()?;
+
+    let _ = fs::remove_file(format!("/tmp/firecracker-{}.sock", cfg.id)).await;
 
     // Execute the firecracker command and wait for it to finish
     let firecracker_status = Command::new("firecracker")
