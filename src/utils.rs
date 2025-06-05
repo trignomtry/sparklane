@@ -169,13 +169,13 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
         r#"
     {{
   "boot-source": {{
-    "kernel_image_path": "/mnt/vmlinux",    // ⬅️ You download this
+    "kernel_image_path": "/mnt/vmlinux",    
     "boot_args": "console=ttyS0 reboot=k panic=1 pci=off"
     }},
   "drives": [
     {{
       "drive_id": "rootfs",
-      "path_on_host": "{}",  // ⬅️ Your cloned ext4 per VM
+      "path_on_host": "{}",
       "is_root_device": true,
       "is_read_only": false
     }}
