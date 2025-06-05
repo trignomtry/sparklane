@@ -23,7 +23,10 @@ impl Db {
             .await
         {
             Ok(slice) => Ok(slice.map(move |e| e.as_ref().to_vec())),
-            Err(e) => Err("cannot commit transaction"),
+            Err(e) => {
+                eprintln!("Commit transaction error: {e}");
+                Err("cannot commit transaction")
+            }
         }
     }
     pub async fn insert(self, k: &str, v: &[u8]) -> Result<(), &'static str> {
@@ -42,7 +45,7 @@ impl Db {
     pub async fn scan_prefix(self, prefix: &str) -> Result<Vec<(Vec<u8>, Vec<u8>)>, &'static str> {
         let mut end = prefix.as_bytes().to_vec();
         end.push(0xFF);
-        let ran = foundationdb::RangeOption::from((prefix.as_ref(), end.as_slice())).clone();
+        let ran = foundationdb::RangeOption::from((prefix.as_ref(), end.as_slice()));
         let db = foundationdb::Database::default().map_err(|_e| "Database scan_prefix error")?;
         match db
             .run(|trx, _maybe_committed| {

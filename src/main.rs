@@ -152,13 +152,14 @@ async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    unsafe {
-        foundationdb::boot();
-    }
+    let db = unsafe { foundationdb::boot() };
 
     println!("Server starting on http://localhost:8096/");
     HttpServer::new(move || App::new().service(deploy))
         .bind(("0.0.0.0", 8096))?
         .run()
         .await
+        .ok();
+    std::mem::drop(db);
+    Ok(())
 }
