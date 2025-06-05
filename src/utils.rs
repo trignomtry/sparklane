@@ -189,7 +189,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
   ]
   ,
   "console-cfg": {{
-    "file": "/tmp/firecracker-{}.log" // Redirect console output to a file
+    "file": "/tmp/firecracker-{}.log"
   }}
 }}
 
