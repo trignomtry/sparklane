@@ -118,6 +118,7 @@ async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
             }
         }
     }
+    println!("File upload complete");
     let files = match utils::extract_zip_to_vec(&fin) {
         Ok(a) => a,
         Err(e) => {
