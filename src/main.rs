@@ -7,7 +7,7 @@ use once_cell::sync::Lazy;
 use rand::seq::IndexedRandom;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use stripe::{EventObject, EventType};
+//use stripe::{EventObject, EventType};
 use tokio::fs;
 mod utils;
 use crate::utils::Db;
@@ -164,40 +164,40 @@ async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(json!({})))
 }
 
-#[post("/add_credits")]
-async fn add_credits(req: HttpRequest, payload: String) -> impl Responder {
-    let db = Db {};
-    let Some(sig) = req.headers().get("stripe-signature") else {
-        return HttpResponse::BadRequest().body("Where my signature at?");
-    };
+// #[post("/add_credits")]
+// async fn add_credits(req: HttpRequest, payload: String) -> impl Responder {
+//     let db = Db {};
+//     let Some(sig) = req.headers().get("stripe-signature") else {
+//         return HttpResponse::BadRequest().body("Where my signature at?");
+//     };
 
-    let Ok(event) = stripe::Webhook::construct_event(
-        &payload,
-        sig.to_str().unwrap(),
-        STRIPE_WEBHOOK_SECRET.as_str(),
-    ) else {
-        return HttpResponse::BadRequest().body("Webhook failed");
-    };
+//     let Ok(event) = stripe::Webhook::construct_event(
+//         &payload,
+//         sig.to_str().unwrap(),
+//         STRIPE_WEBHOOK_SECRET.as_str(),
+//     ) else {
+//         return HttpResponse::BadRequest().body("Webhook failed");
+//     };
 
-    if event.type_ == EventType::CheckoutSessionCompleted {
-        if let EventObject::CheckoutSession(session) = event.data.object {
-            let user_id = session.metadata.unwrap_or_default().get("user_id");
-            let amount = match session.amount_total {
-                Some(r) => r as f64 / 100.0,
-                None => {
-                    return HttpResponse::BadRequest().body("Where's my amount total?");
-                }
-            };
-            //db.add_credits(user_id, credits_for_amount(amount));
-        }
+//     if event.type_ == EventType::CheckoutSessionCompleted {
+//         if let EventObject::CheckoutSession(session) = event.data.object {
+//             let user_id = session.metadata.unwrap_or_default().get("user_id");
+//             let amount = match session.amount_total {
+//                 Some(r) => r as f64 / 100.0,
+//                 None => {
+//                     return HttpResponse::BadRequest().body("Where's my amount total?");
+//                 }
+//             };
+//             //db.add_credits(user_id, credits_for_amount(amount));
+//         }
 
-        // Add credits to the user's account!
-    } else {
-        println!("Other stripe webhook event: {}", event.type_);
-        return HttpResponse::BadRequest().body("That event we haven't handled yet");
-    }
-    HttpResponse::Ok().body("Ok we chill now")
-}
+//         // Add credits to the user's account!
+//     } else {
+//         println!("Other stripe webhook event: {}", event.type_);
+//         return HttpResponse::BadRequest().body("That event we haven't handled yet");
+//     }
+//     HttpResponse::Ok().body("Ok we chill now")
+// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
