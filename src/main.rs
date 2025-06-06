@@ -65,6 +65,7 @@ async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
     let mut tld = None;
     let mut build_commands = None;
     let mut run_command = None;
+    println!("Starting loop");
     for _ in 0..11 {
         let candidate = format!(
             "{}-{}",
