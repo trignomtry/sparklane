@@ -76,8 +76,11 @@ async fn deploy(mut payload: Multipart) -> actix_web::Result<HttpResponse> {
             break;
         }
     }
-
+    let mut ct = 0;
+    println!("Count:");
     while let Some(mut field) = payload.try_next().await? {
+        ct += 1;
+        print!("\r{}", ct);
         let Some(content_disposition) = field.content_disposition() else {
             return Ok(HttpResponse::BadRequest()
                 .json(json!({"error": "Error with file upload. Please try again later"})));
