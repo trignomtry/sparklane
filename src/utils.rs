@@ -274,7 +274,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
             &config_path,
         ])
         .status()?;
-
+    println!("Success!");
     if !firecracker_status.success() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::Other,
