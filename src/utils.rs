@@ -213,7 +213,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
     {{
   "boot-source": {{
     "kernel_image_path": "/mnt/vmlinux",
-    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off root=/dev/vda init=/sbin/init"
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off init=/sbin/init"
     }},
   "drives": [
     {{
