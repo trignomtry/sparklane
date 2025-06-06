@@ -227,9 +227,15 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
 
     std::os::unix::fs::symlink("init.sh", &symlink_path)?;
 
-    let _ = Command::new("ip")
-        .args(["link", "del", &format!("tap{}", &cfg.id[..8])])
-        .status();
+    Command::new("ip")
+        .args([
+            "tuntap",
+            "add",
+            "mode",
+            "tap",
+            &format!("tap{}", &cfg.id[..8]),
+        ])
+        .status()?;
 
     Command::new("ip")
         .args([
