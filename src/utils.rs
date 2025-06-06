@@ -226,6 +226,10 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
     }
 
     std::os::unix::fs::symlink("init.sh", &symlink_path)?;
+    let tap_name = format!("tap{}", &cfg.id[..8]);
+
+    // Try deleting if it already exists
+    let _ = Command::new("ip").args(["link", "del", &tap_name]).output(); // ignore error if it doesn't exist
 
     Command::new("ip")
         .args([
