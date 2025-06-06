@@ -103,6 +103,40 @@ pub fn extract_zip_to_vec(zip_bytes: &[u8]) -> std::io::Result<Vec<(String, Vec<
     Ok(files)
 }
 
+fn ensure_tap_device(tap_name: &str) -> std::io::Result<()> {
+    // Delete existing device if it somehow exists
+    let _ = Command::new("ip").args(["link", "del", tap_name]).output();
+
+    // Slight delay just in case the system is slow to release it
+    std::thread::sleep(std::time::Duration::from_millis(100));
+
+    // Try creating the tap
+    let status = Command::new("ip")
+        .args(["tuntap", "add", "mode", "tap", tap_name])
+        .status()?;
+
+    if !status.success() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to create TAP device {}", tap_name),
+        ));
+    }
+
+    // Bring it up
+    let status = Command::new("ip")
+        .args(["link", "set", tap_name, "up"])
+        .status()?;
+
+    if !status.success() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to bring up TAP device {}", tap_name),
+        ));
+    }
+
+    Ok(())
+}
+
 pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Result<()> {
     let base_img_path = "/mnt/sparklane/base.img";
     let vm_img_path = format!("/mnt/vm-images/{}.img", cfg.id);
@@ -227,33 +261,7 @@ pub async fn spin(cfg: &Config, user_js: Vec<(String, Vec<u8>)>) -> std::io::Res
 
     std::os::unix::fs::symlink("init.sh", &symlink_path)?;
     let tap_name = format!("tap{}", &cfg.id[..8]);
-
-    // Try deleting if it already exists
-    let _ = Command::new("ip").args(["link", "del", &tap_name]).output(); // ignore error if it doesn't exist
-
-    Command::new("ip")
-        .args([
-            "tuntap",
-            "add",
-            "mode",
-            "tap",
-            &format!("tap{}", &cfg.id[..8]),
-        ])
-        .status()?;
-
-    Command::new("ip")
-        .args([
-            "tuntap",
-            "add",
-            "mode",
-            "tap",
-            &format!("tap{}", &cfg.id[..8]),
-        ])
-        .status()?;
-
-    Command::new("ip")
-        .args(["link", "set", &format!("tap{}", &cfg.id[..8]), "up"])
-        .status()?;
+    ensure_tap_device(&tap_name)?;
 
     let _ = fs::remove_file(format!("/tmp/firecracker-{}.sock", cfg.id)).await;
     println!("Crackin...");
